@@ -2,42 +2,32 @@ package main
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
-	"time"
-
-	"github.com/gocolly/colly/v2"
+	"sync"
 )
 
 func main() {
-	c := colly.NewCollector(
-		colly.AllowedDomains("coolshell.cn", "www.coolshell.cn"),
-	)
+	ch := make(chan *Visitor, 10000)
 
-	c.SetRequestTimeout(60 * time.Second)
+	factory := NewVisitorFactory(ch)
 
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL.String())
-	})
+	homeVisitor := factory.NewVisitor(Home, "/")
 
-	c.OnHTML(`span.pages`, func(h *colly.HTMLElement) {
-		// h.Text should be 第 1 / 74 页
-		texts := strings.Split(h.Text, " ")
-		if len(texts) != 5 {
-			panic("invalid texts")
-		}
+	ch <- homeVisitor
 
-		totalPages, err := strconv.Atoi(texts[3])
-		if err != nil {
-			panic(fmt.Sprintf("parse total pages failed: %v", err))
-		}
+	wg := sync.WaitGroup{}
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		collector := NewCollector(ch)
+		go func() {
+			defer wg.Done()
+			collector.Collect()
+		}()
+	}
 
-		fmt.Println("total pages : ", totalPages)
-	})
+	factory.Wait()
+	fmt.Println("after wait.......................###############")
 
-	c.OnError(func(r *colly.Response, err error) {
-		fmt.Println("something error...", err)
-	})
+	close(ch)
 
-	c.Visit("https://coolshell.cn/")
+	wg.Wait()
 }
