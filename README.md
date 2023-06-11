@@ -1,2 +1,5 @@
 # coolshell-memorial
-a archive of the "coolshell.cn". @haoel R.I.P. 
+
+It's an archive of the https://coolshell.cn.
+
+@haoel R.I.P. 

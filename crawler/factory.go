@@ -35,8 +35,6 @@ func (factory *VisitorFactory) NewVisitor(vt visitorType, url string) *Visitor {
 	factory.wg.Add(1)
 	factory.cnt.Add(1)
 
-	fmt.Println("new visitor : ", vt, url)
-
 	var visitor *Visitor
 
 	switch vt {
@@ -58,13 +56,16 @@ func (factory *VisitorFactory) NewVisitor(vt visitorType, url string) *Visitor {
 
 	visitor.RegisterDoner(factory)
 	visitor.factory = factory
+	visitor.vt = vt
+
+	fmt.Println("new visitor : ", vt, url)
 
 	return visitor
 }
 
 func (factory *VisitorFactory) Done(url string) {
 	factory.cnt.Add(-1)
-	fmt.Println("done........................, left : ", factory.cnt.Load())
+	fmt.Println(url, "done........................, left : ", factory.cnt.Load())
 	factory.wg.Done()
 }
 

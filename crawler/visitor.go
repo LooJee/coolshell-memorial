@@ -23,18 +23,19 @@ type Visitor struct {
 	ch            chan<- *Visitor
 	doner         []VisitorDoner
 	factory       *VisitorFactory
+	vt            visitorType
 }
 
 func (visitor *Visitor) OnFailed() {
 	fmt.Println("on failed : ", visitor.url)
-	visitor.ch <- visitor
+	visitor.ch <- visitor.factory.NewVisitor(visitor.vt, visitor.url)
 }
 
 func (visitor *Visitor) RegisterDoner(doner VisitorDoner) {
 	visitor.doner = append(visitor.doner, doner)
 }
 
-func (visitor *Visitor) OnSucceed() {
+func (visitor *Visitor) Done() {
 	for _, doner := range visitor.doner {
 		doner.Done(visitor.url)
 	}
@@ -121,11 +122,11 @@ func NewHomepageVisitor(visitorCollector chan<- *Visitor) *Visitor {
 }
 
 func NewArticleVisitor(visitorCollector chan<- *Visitor, url string) *Visitor {
-	return &Visitor{url: url}
+	return &Visitor{ch: visitorCollector, url: url}
 }
 
 func NewArchiveVisitor(visitorCollector chan<- *Visitor, url string) *Visitor {
-	visitor := &Visitor{url: url}
+	visitor := &Visitor{ch: visitorCollector, url: url}
 	visitor.htmlCallbacks = []*htmlCallBack{
 		{
 			// next page
@@ -143,7 +144,7 @@ func NewArchiveVisitor(visitorCollector chan<- *Visitor, url string) *Visitor {
 }
 
 func NewTagVisitor(visitorCollector chan<- *Visitor, url string) *Visitor {
-	visitor := &Visitor{url: url}
+	visitor := &Visitor{ch: visitorCollector, url: url}
 	visitor.htmlCallbacks = []*htmlCallBack{
 		{
 			// next page
@@ -179,7 +180,7 @@ func NewCategoryVisitor(visitorCollector chan<- *Visitor, url string) *Visitor {
 }
 
 func NewNavVisitor(visitorCollector chan<- *Visitor, url string) *Visitor {
-	return &Visitor{url: url}
+	return &Visitor{ch: visitorCollector, url: url}
 }
 
 func NewPagination(visitorCollector chan<- *Visitor, url string) *Visitor {

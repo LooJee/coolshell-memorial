@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -13,24 +12,24 @@ import (
 type Collector struct {
 	collector *colly.Collector
 	ch        chan *Visitor
+	number    int
 }
 
-func NewCollector(ch chan *Visitor) *Collector {
+func NewCollector(number int, ch chan *Visitor) *Collector {
 	return &Collector{
 		collector: colly.NewCollector(
 			colly.AllowedDomains(Host, "coolshell.cn"),
 		),
-		ch: ch,
+		ch:     ch,
+		number: number,
 	}
 }
 
 func (collector *Collector) Collect() {
-	collector.collector.SetRequestTimeout(time.Minute)
-
 	for visitor := range collector.ch {
+		fmt.Println(collector.number, "get visitor :", visitor.url)
 		var (
-			cloner    = collector.collector.Clone()
-			onSucceed bool
+			cloner = collector.collector.Clone()
 		)
 
 		for _, cb := range visitor.htmlCallbacks {
@@ -38,12 +37,12 @@ func (collector *Collector) Collect() {
 		}
 
 		cloner.OnRequest(func(r *colly.Request) {
-			fmt.Println("Visiting", r.URL.String())
+			fmt.Println(collector.number, "Visiting", r.URL.String())
 		})
 
 		cloner.OnError(func(r *colly.Response, err error) {
-			fmt.Println("something error...", err)
-			go visitor.OnFailed()
+			fmt.Println(collector.number, r.Request.URL.RequestURI(), "something error...", err)
+			visitor.OnFailed()
 		})
 
 		cloner.OnResponse(func(r *colly.Response) {
@@ -59,7 +58,6 @@ func (collector *Collector) Collect() {
 				if err := r.Save(file); err != nil {
 					panic(err)
 				}
-				onSucceed = true
 			} else {
 				fmt.Println("+++++++++++++++++++++++failed at response : ", r.Request.URL.RequestURI(), r.StatusCode)
 				panic("failed at response")
@@ -67,9 +65,7 @@ func (collector *Collector) Collect() {
 		})
 
 		cloner.Visit(visitor.url)
-		if onSucceed {
-			visitor.OnSucceed()
-		}
+		visitor.Done()
 		fmt.Println("collector channel size : ", len(collector.ch))
 	}
 }

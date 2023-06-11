@@ -17,7 +17,7 @@ func main() {
 	wg := sync.WaitGroup{}
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
-		collector := NewCollector(ch)
+		collector := NewCollector(i, ch)
 		go func() {
 			defer wg.Done()
 			collector.Collect()
