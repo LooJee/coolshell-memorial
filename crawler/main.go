@@ -1,11 +1,22 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"sync"
 )
 
+var (
+	distPath string
+)
+
+func init() {
+	flag.StringVar(&distPath, "dist", "./dist", "path to save static files, default is ./dist")
+}
+
 func main() {
+	flag.Parse()
+
 	ch := make(chan *Visitor, 10000)
 
 	factory := NewVisitorFactory(ch)

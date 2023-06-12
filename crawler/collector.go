@@ -49,7 +49,7 @@ func (collector *Collector) Collect() {
 			// fmt.Println("response : ", r.Request.URL, r.Request.URL.RequestURI())
 
 			if r.StatusCode == 200 {
-				file := "./dist" + r.Request.URL.RequestURI()
+				file := distPath + r.Request.URL.RequestURI()
 				if !strings.HasSuffix(file, ".html") {
 					file += "/index.html"
 				}
