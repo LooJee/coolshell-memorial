@@ -11,3 +11,8 @@ crawler:
 .PHONY: image
 image:
 	docker build -t coolshell-nginx .
+
+# 运行 docker
+.PHONY: docker
+docker:
+	docker run -d --name coolshell-nginx -p 8080:80 coolshell-nginx
